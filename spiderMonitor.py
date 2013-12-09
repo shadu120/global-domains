@@ -32,7 +32,7 @@ class DomainProcessor(threading.Thread):
     _BlacklistFileModifyTime = 0
     _BlacklistFileName       = 'blacklist.txt'
 
-    DomainSuffixRepeatMax    = 200 * 2
+    DomainSuffixRepeatMax    = 100 * 2
 
     DomainSuffixCacheMaxLen  = 2000
     _DomainSuffixCache       = {}
@@ -88,7 +88,7 @@ class DomainProcessor(threading.Thread):
         black = domain.replace('.', '')[-7:]
         if self._DomainSuffixCache.has_key(black):
             self._DomainSuffixCache[black] = self._DomainSuffixCache[black] + 1
-            if self._DomainSuffixCache[black] > self.DomainSuffixRepeatMax/2:
+            if self._DomainSuffixCache[black] > self.DomainSuffixRepeatMax/2 and not black in self._InternalBlacklist:
                 self._InternalBlacklist.append(black)
         else:
             self._DomainSuffixCache[black] = 1
