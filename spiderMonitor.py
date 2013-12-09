@@ -168,7 +168,7 @@ class Monitor(threading.Thread):
         qStatus = HTTPSQSQueue.status(qName).replace('\n', '')
         UnRead  = 0
         try:
-            UnRead = int(json.loads().pop('unread'))
+            UnRead = int(json.loads(qStatus).pop('unread'))
         except Exception, e:
             C.Info(str(e), C.ERROR)
         return UnRead
