@@ -75,7 +75,7 @@ class DomainSpidder(threading.Thread):
             if not domain in domains :
                 HTTPSQSQueue.put(DOMAINQUEUE02, domain)
                 domains.append(domain)
-        C.Info('(%3d) get %4d domains from %s' % (self._tid, len(domains), originalDomain), C.INFO)
+        C.Info('(%2d) get %3d domains from %s' % (self._tid, len(domains), originalDomain), C.INFO)
         domains = []
 
     def fuck(self):
