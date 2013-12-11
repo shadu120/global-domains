@@ -33,7 +33,7 @@ class DomainProcessor(threading.Thread):
     _BlacklistFileModifyTime = 0
     _BlacklistFileName       = 'blacklist.txt'
 
-    TLDUserPartRepeatMax     = 100 * 2
+    TLDUserPartRepeatMax     = 200 * 2
 
     TLDUserPartCacheMaxLen   = 2000
     _TLDUserPartCache        = {}
