@@ -33,10 +33,10 @@ class DomainProcessor(threading.Thread):
     _BlacklistFileModifyTime = 0
     _BlacklistFileName       = 'blacklist.txt'
 
-    DomainSuffixRepeatMax    = 100 * 2
+    TLDUserPartRepeatMax     = 100 * 2
 
-    DomainSuffixCacheMaxLen  = 2000
-    _DomainSuffixCache       = {}
+    TLDUserPartCacheMaxLen   = 2000
+    _TLDUserPartCache        = {}
 
     InternalBlackListMaxLen  = 2000
     ExternalBlacklistMaxLen  = 1000
@@ -95,17 +95,17 @@ class DomainProcessor(threading.Thread):
         '''
         black = self._tld.getTLD(domain)[0]
         if '' == black : return
-        if self._DomainSuffixCache.has_key(black):
-            self._DomainSuffixCache[black] = self._DomainSuffixCache[black] + 1
-            if self._DomainSuffixCache[black] > self.DomainSuffixRepeatMax/2 and not black in self._InternalBlacklist:
+        if self._TLDUserPartCache.has_key(black):
+            self._TLDUserPartCache[black] = self._TLDUserPartCache[black] + 1
+            if self._TLDUserPartCache[black] > self.TLDUserPartRepeatMax/2 and not black in self._InternalBlacklist:
                 self._InternalBlacklist.append(black)
         else:
-            self._DomainSuffixCache[black] = 1
+            self._TLDUserPartCache[black] = 1
 
-        if len(self._DomainSuffixCache) > self.DomainSuffixCacheMaxLen:
-            tempList = sorted(self._DomainSuffixCache, key=self._DomainSuffixCache.get)
+        if len(self._TLDUserPartCache) > self.TLDUserPartCacheMaxLen:
+            tempList = sorted(self._TLDUserPartCache, key=self._TLDUserPartCache.get)
             for i in range(0, len(tempList)/2):
-                self._DomainSuffixCache.pop(tempList[i])
+                self._TLDUserPartCache.pop(tempList[i])
             tempList = None
 
         if len(self._InternalBlacklist) > self.InternalBlackListMaxLen:
@@ -148,11 +148,11 @@ class DomainProcessor(threading.Thread):
 
     def dump(self):
         C.Info('DUMP================================================', C.NOTICE)
-        for item in self._DomainSuffixCache.iteritems():
+        for item in self._TLDUserPartCache.iteritems():
             C.Info('%4d/%s' % (item[1], item[0]), C.NOTICE)
         for black in self._InternalBlacklist:
             C.Info('Black domain:%s' % black, C.NOTICE)
-        C.Info('DomainSuffixCache:%4d, InternalBlacklist:%4d, ExternalBlacklist:%4d' % (len(self._DomainSuffixCache), len(self._InternalBlacklist), len(self._ExternalBlacklist)), C.NOTICE)
+        C.Info('TLDUserPartCache:%4d, InternalBlacklist:%4d, ExternalBlacklist:%4d' % (len(self._TLDUserPartCache), len(self._InternalBlacklist), len(self._ExternalBlacklist)), C.NOTICE)
         C.Info('DUMP================================================', C.NOTICE)
     
 class Monitor(threading.Thread):
