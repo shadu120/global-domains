@@ -67,7 +67,7 @@ class DomainProcessor(threading.Thread):
             DomainsStored = DomainsStored    + 1
         else:
             if not MySSDB.isDomainInDB('hdp', domain):
-                MySSDB.setHItem('hdp', MD5(domain), str(time.time()))
+                MySSDB.setHItem('hdp', MD5(domain), str(int(time.time())))
     def monitor(self):
         if os.path.exists('debug.dump'):self.dump()
     def refreshBlacklist(self, domain):
@@ -158,11 +158,13 @@ class Monitor(threading.Thread):
         self._QueueUnRead01 = self.getQueueUnRead(DOMAINQUEUE01)
         self._QueueUnRead02 = self.getQueueUnRead(DOMAINQUEUE02)
         if self._QueueUnRead01 > 100000:
-            HTTPSQSQueue.reset(DOMAINQUEUE01)                
             C.Info('HTTPSQSQueue %s will be full, waiting for reset!!!!!!!!!!!!!' % DOMAINQUEUE01, C.ALERT)
+            for i in range(0, 100):HTTPSQSQueue.put(DOMAINQUEUE02, HTTPSQSQueue.get(DOMAINQUEUE01))
+            HTTPSQSQueue.reset(DOMAINQUEUE01)                
         if self._QueueUnRead02 > 100000:
-            HTTPSQSQueue.reset(DOMAINQUEUE02)                
             C.Info('HTTPSQSQueue %s will be full, waiting for reset!!!!!!!!!!!!!' % DOMAINQUEUE02, C.ALERT)
+            for i in range(0, 100):HTTPSQSQueue.put(DOMAINQUEUE01, HTTPSQSQueue.get(DOMAINQUEUE02))
+            HTTPSQSQueue.reset(DOMAINQUEUE02)                
 
     def getQueueUnRead(self, qName):
         qStatus = HTTPSQSQueue.status(qName).replace('\n', '')

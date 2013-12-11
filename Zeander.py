@@ -27,7 +27,7 @@ class C():
     INFO   = 6
     DEBUG  = 7
 
-    Priority = {0:'EMERG', 1:'ALERT', 2:'CRIT', 3:'ERROR', 4:'WARN', 5:'NOTICE', 6:'Info', 7:'Debug'}
+    Priority = {0:'EMERG', 1:'ALERT', 2:'CRIT', 3:'ERROR', 4:'WARN', 5:'NOTICE', 6:'INFO', 7:'DEBUG'}
 
     @staticmethod
     def Info(msg, pri = 6):
