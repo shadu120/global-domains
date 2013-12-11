@@ -9,7 +9,7 @@ import sys
 import time
 import json
 from copy import deepcopy
-from Zeander import MD5, C
+from Zeander import MD5, C, TLD
 from spiderdb import MySSDB
 from spiderqueue import HTTPSQSQueue
 
@@ -29,6 +29,7 @@ class DomainProcessor(threading.Thread):
     
     _UserAgent               = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.110 Safari/537.36'
     
+    _tld                     = None   # Top Level Domain parser form Zeander
     _BlacklistFileModifyTime = 0
     _BlacklistFileName       = 'blacklist.txt'
 
@@ -42,13 +43,15 @@ class DomainProcessor(threading.Thread):
     _InternalBlacklist       = []
     _ExternalBlacklist       = []
 
+
     def __init__(self, tid):
         threading.Thread.__init__(self)
         self._tid = tid
+        self._tld = TLD()
 
     def run(self):
         while True:
-            domain = HTTPSQSQueue.get(DOMAINQUEUE02)
+            domain = HTTPSQSQueue.get(DOMAINQUEUE02).lower()
             if '' == domain and None == time.sleep(1): continue
             if self.isDomainInBlacklist(domain): 
                 C.Info('Domain in black list: %s' % domain, C.DEBUG)
@@ -76,16 +79,22 @@ class DomainProcessor(threading.Thread):
     def isDomainInBlacklist(self, domain):
         return self.isDomainInExternalBlacklist(domain) or self.isDomainInInternalBlacklist(domain)
     def isDomainInInternalBlacklist(self, domain):
-        for black in self._InternalBlacklist:
-            if domain.replace('.', '').endswith(black): return True
+        domain_user_part = self._tld.getTLD(domain)[0]
+        if not '' == domain_user_part:
+            for black in self._InternalBlacklist:
+                if domain_user_part == black: return True
         return False
     def isDomainInExternalBlacklist(self, domain):
         for black in self._ExternalBlacklist:
-            if domain.replace('.', '').endswith(black):
-                return True
+            if domain.endswith(black): return True
         return False
+
     def refreshInternalBlacklist(self, domain):
-        black = domain.replace('.', '')[-7:]
+        '''
+        www.chinaz.com.cn -> chinaz -> CacheDictionary
+        '''
+        black = self._tld.getTLD(domain)[0]
+        if '' == black : return
         if self._DomainSuffixCache.has_key(black):
             self._DomainSuffixCache[black] = self._DomainSuffixCache[black] + 1
             if self._DomainSuffixCache[black] > self.DomainSuffixRepeatMax/2 and not black in self._InternalBlacklist:
@@ -97,22 +106,23 @@ class DomainProcessor(threading.Thread):
             tempList = sorted(self._DomainSuffixCache, key=self._DomainSuffixCache.get)
             for i in range(0, len(tempList)/2):
                 self._DomainSuffixCache.pop(tempList[i])
+            tempList = None
 
         if len(self._InternalBlacklist) > self.InternalBlackListMaxLen:
-            self._InternalBlacklist = self._InternalBlacklist[self.InternalBlackListMaxLen/2:]
+            self.saveInternalBlacklist()
     
     def refreshExternalBlacklist(self):
-        if (random.randrange(1,11) % 3 == 0):return
+        if     (random.randrange(1,11) % 3 == 0)      :return
         if not os.path.exists(self._BlacklistFileName):return
         BlacklistFileModifyTime = os.stat(self._BlacklistFileName).st_mtime
         if self._BlacklistFileModifyTime == BlacklistFileModifyTime:
             return
         try:
-            f = open(self._BlacklistFileName)
-            lines = f.readlines()
+            f          = open(self._BlacklistFileName)
+            lines      = f.readlines()
             blacklists = []
             for line in lines:
-                domain = line.strip().replace('\n', '').replace('\r', '').replace('.', '')
+                domain = line.strip().replace('\n', '').replace('\r', '')
                 if len(domain) > 0:blacklists.append(domain)
             self._ExternalBlacklist = blacklists[:]
             blacklists = None
@@ -121,6 +131,19 @@ class DomainProcessor(threading.Thread):
         except Exception, e:
             C.Info(str(e), C.ERROR)
         finally:
+            f.close()
+
+    def saveInternalBlacklist(self):
+        f=open('blacklist02.log', 'a+')
+        try:
+            
+            for i in range(0, self.InternalBlackListMaxLen/2):
+                f.write(self._InternalBlacklist[i] + '\n')
+            C.Info('internal blacklist saved', C.ALERT)
+        except Exception, e:
+            C.Info(str(e), C.ERROR)
+        finally:
+            self._InternalBlacklist = self._InternalBlacklist[self.InternalBlackListMaxLen/2:]
             f.close()
 
     def dump(self):
@@ -146,6 +169,9 @@ class Monitor(threading.Thread):
             time.sleep(15)
 
     def reportDBStatus(self):
+        '''
+        SSDB should be in separated instance, otherwise there will be drmastic problems!!!
+        '''
         C.Info('DB: %d / %d , Mem:%d / %d , Queue: %d / %d , Time:%.f' % \
             (MySSDB.getHSize('hdm'), MySSDB.getHSize('hdp'), \
                 DomainsProcessed, DomainsStored, \

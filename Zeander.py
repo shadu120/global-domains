@@ -46,7 +46,55 @@ class C():
         if os.path.exists('debug.%s' % C.Priority[7].lower()) :return C.DEBUG
         return C.INFO
 
+class TLD():
+    '''
+    # Source path of Mozilla's effective TLD names file.
+    http://mxr.mozilla.org/mozilla/source/netwerk/dns/src/effective_tld_names.dat?raw=1
+    '''
+    TLD_DATA_FILE = './res/effective_tld_names.dat'
+    tld_name_list = []
+
+    def __init__(self):
+        self._initTLDNameList()
+        pass
+
+    def _initTLDNameList(self):
+        try:
+            fhandle            = open(self.TLD_DATA_FILE)
+            self.tld_name_list = set([line.strip() for line in fhandle if line[0] not in '/\n'])
+        except Exception, e:
+            C.Info(str(e), C.ERROR)
+        finally:
+            try:
+                fhandle.close()
+            except Exception, e2:
+                C.Info(str(e2), C.ERROR)
+
+    def getTLD(self, domain, active_only=True):
+        '''
+        input :chinaz.com
+        output:('chinaz', 'com.cn', 'chinaz.com.cn', 'mail.chinaz.com.cn')
+        '''
+        domain_parts = domain.split('.')
+        for i in range(0, len(domain_parts)):
+            sliced_domain_parts = domain_parts[i:]
+
+            match = '.'.join(sliced_domain_parts)
+            wildcard_match = '.'.join(['*'] + sliced_domain_parts[1:])
+            inactive_match = "!%s" % match
+
+            # Match tlds
+            if (match in self.tld_name_list or wildcard_match in self.tld_name_list or (active_only is False and inactive_match in self.tld_name_list)):
+                return (domain_parts[i-1], ".".join(domain_parts[i:]), ".".join(domain_parts[i-1:]), domain)
+        return ('', '', '', '')
+
+
+
 if __name__ == '__main__':
-    C.Info('dd')
-    C.Info('zz', C.DEBUG)
-    C.Info('xx', C.INFO)
+    x = TLD()
+    import time
+    print '%f' % time.time()
+    print x.getTLD('mail.chinaz.com.cn')
+    print '%f' % time.time()
+    print x.getTLD('localhost')
+    print '%f' % time.time()
