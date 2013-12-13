@@ -71,7 +71,7 @@ class DomainSpidder(threading.Thread):
         urls        = self.parseUrlsFromHTMLContent(hc)
         for url in urls:
             domain  = self.parseDomainFromUrl(url)
-            if not domain in domains :
+            if not domain in domains and not domain == originalDomain:
                 HTTPSQSQueue.put(DOMAINQUEUE02, domain)
                 domains.append(domain)
         C.Info('(%2d) get %3d domains from %s' % (self._tid, len(domains), originalDomain), C.INFO)
