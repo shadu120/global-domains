@@ -173,8 +173,8 @@ class Monitor(threading.Thread):
         
     def run(self):
         while True:
-            self.reportDBStatus()
             self.checkDomainsQueue()
+            self.reportDBStatus()
             time.sleep(15)
 
     def reportDBStatus(self):
@@ -189,7 +189,6 @@ class Monitor(threading.Thread):
             C.INFO)
 
     def checkDomainsQueue(self):
-        if (random.randrange(0, 10) % 3) == 0 : return
         self._QueueUnRead01 = self.getQueueUnRead(DOMAINQUEUE01)
         self._QueueUnRead02 = self.getQueueUnRead(DOMAINQUEUE02)
         if self._QueueUnRead01 > 100000:
