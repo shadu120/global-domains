@@ -100,10 +100,11 @@ class DomainSpidder(threading.Thread):
 if __name__ == '__main__' :
     reload(sys)
     sys.setdefaultencoding("UTF-8")
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 2:
         sys.exit()
-    HTTPSQSQueue.put(DOMAINQUEUE01,sys.argv[1])
-    for i in range(0,int(sys.argv[2])):
+    if len(sys.argv) > 2:
+        HTTPSQSQueue.put(DOMAINQUEUE01,sys.argv[2])
+    for i in range(0,int(sys.argv[1])):
         DomainSpidders.append(DomainSpidder(i))
     for digger in DomainSpidders:
         digger.start()
