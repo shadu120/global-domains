@@ -6,9 +6,6 @@ import md5
 import hashlib
 from SSDB import SSDB
 
-ssdb = SSDB('127.0.0.1', 8888)
-
-
 def getMD5(strMessage):
     strMD5 = ''
     md5c   = hashlib.md5()
@@ -17,43 +14,41 @@ def getMD5(strMessage):
     return strMD5
 
 class MySSDB():
+	_ssdb = None
 
-	@staticmethod
-	def isHItemInDB(dbname, item):
-		req = ssdb.request('hget', [dbname, item])
+	def __init__(self, host='127.0.0.1', port = 8888):
+		self._ssdb = SSDB(host, port)
+
+	def isHItemInDB(self, dbname, item):
+		req = self._ssdb.request('hget', [dbname, item])
 		return req.code == 'ok'
 
-	@staticmethod
-	def getHItem(dbname, item):
-		req = ssdb.request('hget', [dbname, item] )
+	def getHItem(self, dbname, item):
+		req = self._ssdb.request('hget', [dbname, item] )
 		if req.code == 'ok':
 			return req.data
 		else:
 			return ''
 
-	@staticmethod
-	def getHValueByItem(dbname, item):
-		req = ssdb.request('hget', [dbname, item] )
+	def getHValueByItem(self, dbname, item):
+		req = self._ssdb.request('hget', [dbname, item] )
 		if req.code == 'ok':
 			return req.data
 		else:
 			return ''
 
-	@staticmethod
-	def getHSize(dbname):
-		req = ssdb.request('hsize',[dbname])
+	def getHSize(self, dbname):
+		req = self._ssdb.request('hsize',[dbname])
 		if req.code == 'ok':
 			return req.data
 		else:
 			return 0
 
-	@staticmethod
-	def setHItem(dbname, item, value):
+	def setHItem(self, dbname, item, value):
 		try:
-			req = ssdb.request('hset',[dbname, item, value])
+			req = self._ssdb.request('hset',[dbname, item, value])
 		except Exception, e:
 			print e
 
-	@staticmethod
-	def isDomainInDB(dbname, domain):
-		return MySSDB.isHItemInDB(dbname, getMD5(domain))
+	def isDomainInDB(self, dbname, domain):
+		return self.isHItemInDB(dbname, getMD5(domain))

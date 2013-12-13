@@ -13,6 +13,9 @@ from Zeander import MD5, C, TLD
 from spiderdb import MySSDB
 from spiderqueue import HTTPSQSQueue
 
+SSDBHOST         = '127.0.0.1'
+SSDBPORT         = 8888
+
 DOMAINQUEUE01    = 'domain_01'
 DOMAINQUEUE02    = 'domain_02'
 
@@ -20,6 +23,9 @@ DomainsProcessed = 0
 DomainsStored    = 0
 
 class DomainProcessor(threading.Thread):
+    _tid                     = 0
+    _ssdb                    = None
+
     ThreadStartTime          = time.time()
     ThreadCanExit            = False
     ThreadTimeOut            = 60 * 2
@@ -28,7 +34,7 @@ class DomainProcessor(threading.Thread):
     DomainsStored            = 0
     
     _UserAgent               = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.110 Safari/537.36'
-    
+
     _tld                     = None   # Top Level Domain parser form Zeander
     _BlacklistFileModifyTime = 0
     _BlacklistFileName       = 'blacklist.txt'
@@ -44,10 +50,11 @@ class DomainProcessor(threading.Thread):
     _ExternalBlacklist       = []
 
 
-    def __init__(self, tid):
+    def __init__(self, tid = 0):
         threading.Thread.__init__(self)
-        self._tid = tid
-        self._tld = TLD()
+        self._tid  = tid
+        self._tld  = TLD()
+        self._ssdb = MySSDB(SSDBHOST, SSDBPORT)
 
     def run(self):
         while True:
@@ -64,13 +71,13 @@ class DomainProcessor(threading.Thread):
     def fuck(self, domain):
         global DomainsProcessed, DomainsStored
         DomainsProcessed  = DomainsProcessed + 1
-        if not MySSDB.isDomainInDB('hdm', domain):
-            MySSDB.setHItem('hdm', MD5(domain), domain)
+        if not self._ssdb.isDomainInDB('hdm', domain):
+            self._ssdb.setHItem('hdm', MD5(domain), domain)
             HTTPSQSQueue.put(DOMAINQUEUE01, domain)
             DomainsStored = DomainsStored    + 1
         else:
-            if not MySSDB.isDomainInDB('hdp', domain):
-                MySSDB.setHItem('hdp', MD5(domain), str(int(time.time())))
+            if not self._ssdb.isDomainInDB('hdp', domain):
+                self._ssdb.setHItem('hdp', MD5(domain), str(int(time.time())))
     def monitor(self):
         if os.path.exists('debug.dump'):self.dump()
     def refreshBlacklist(self, domain):
@@ -156,11 +163,13 @@ class DomainProcessor(threading.Thread):
         C.Info('DUMP================================================', C.NOTICE)
     
 class Monitor(threading.Thread):
-    _StartTime = time.time()
+    _StartTime     = time.time()
     _QueueUnRead01 = 0
     _QueueUnRead02 = 0
+    _ssdb          = None
     def __init__(self):
         threading.Thread.__init__(self)
+        self._ssdb = MySSDB(SSDBHOST, SSDBPORT)
         
     def run(self):
         while True:
@@ -173,7 +182,7 @@ class Monitor(threading.Thread):
         SSDB should be in separated instance, otherwise there will be drmastic problems!!!
         '''
         C.Info('DB: %d / %d , Mem:%d / %d , Queue: %d / %d , Time:%.f' % \
-            (MySSDB.getHSize('hdm'), MySSDB.getHSize('hdp'), \
+            (self._ssdb.getHSize('hdm'), self._ssdb.getHSize('hdp'), \
                 DomainsProcessed, DomainsStored, \
                 self._QueueUnRead01, self._QueueUnRead02, \
                 time.time() - self._StartTime), \

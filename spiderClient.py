@@ -29,10 +29,10 @@ class DomainSpidder(threading.Thread):
             self.ThreadCanExit = False
 
     def isDomainValid(self, domain):
-        if not len(domain) > 0                : return False
-        if domain[-1] in '.1234567890>&<;'    : return False
+        if not len(domain) > 0                        : return False
+        if domain[-1] in '.1234567890-'               : return False
         for item in domain:
-            if item in '&><~!@#$%^&*()+=/\\'  : return False
+            if item in ',&><~!@#$%^&*()+=[]|/\\\"\''  : return False
         return True
 
     def parseDomainFromUrl(self, url):
