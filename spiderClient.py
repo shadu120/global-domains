@@ -28,12 +28,18 @@ class DomainSpidder(threading.Thread):
         if time.time() - self.ThreadStartTime > self.ThreadTimeOut:
             self.ThreadCanExit = False
 
+    def isDomainValid(self, domain):
+        if not len(domain) > 0                : return False
+        if domain[-1] in '.1234567890>&<;'    : return False
+        for item in domain:
+            if item in '&><~!@#$%^&*()+=/\\': return False
+        return True
+
     def parseDomainFromUrl(self, url):
         domain = ''
         try:
             domain = urlparse.urlparse(url)[1].split(':')[0].lower().strip()
-            if len(domain) > 0 and domain[-1] in ('0','1','2','3','4','5', '6', '7', '8', '9') and domain.find('.') == -1:
-                domain = ''
+            if not self.isDomainValid(domain):domain = ''
         except Exception, e:
             C.Info('%s : %s' % (str(e), url), C.ERROR)
         finally:
