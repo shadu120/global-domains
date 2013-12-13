@@ -7,7 +7,6 @@ import threading
 import sys
 import time
 from Zeander import MD5, C
-from spiderdb import MySSDB
 from spiderqueue import HTTPSQSQueue
 
 
