@@ -93,7 +93,7 @@ class DomainSpidder(threading.Thread):
             self.fuckDomain(originalDomain)
             self.ThreadRefreshTime = time.time()
             self.TotalProcessed  = self.TotalProcessed + 1
-            info = '(%2d) processed %d domains in %.fs' % (self._tid, self.TotalProcessed, self.ThreadRefreshTime-self.ThreadStartTime)
+            info = '*****(%2d) processed %d domains in %.fs' % (self._tid, self.TotalProcessed, self.ThreadRefreshTime-self.ThreadStartTime)
             C.Info(info, C.DEBUG)
             if self.ThreadCanExit == True: break
 
