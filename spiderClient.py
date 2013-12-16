@@ -117,7 +117,7 @@ class Monitor(threading.Thread):
         for spider in DomainSpidders:
             self.TotalProcessed = self.TotalProcessed + spider.TotalProcessed
         TimeUsed = time.time() - self.ThreadStartTime
-        info = 'Totoal Domains:%d, Time used:%.fm, Speed:%.f/s' % (self.TotalProcessed, TimeUsed/60, float(self.TotalProcessed/TimeUsed))
+        info = 'Totoal Domains:%d, Time used:%.fm, Speed:%.f/m' % (self.TotalProcessed, TimeUsed/60, float(self.TotalProcessed * 60/TimeUsed))
         C.Info(info, C.INFO)
 
 if __name__ == '__main__' :
