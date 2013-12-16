@@ -15,17 +15,19 @@ DOMAINQUEUE02  = 'domain_02'
 DomainSpidders = []
 
 class DomainSpidder(threading.Thread):
-    ThreadStartTime  = time.time()
-    ThreadCanExit    = False
-    ThreadTimeOut    = 60 * 2
-    _UserAgent       = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.110 Safari/537.36'
+    ThreadStartTime    = time.time()
+    ThreadRefreshTime  = time.time()
+    ThreadCanExit      = False
+    ThreadTimeOut      = 60 * 2
+    _UserAgent         = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.110 Safari/537.36'
+    TotalProcessed     = 0
 
     def __init__(self, tid):
         threading.Thread.__init__(self)
         self._tid = tid
 
     def isThreadDead(self):
-        if time.time() - self.ThreadStartTime > self.ThreadTimeOut:
+        if time.time() - self.ThreadRefreshTime > self.ThreadTimeOut:
             self.ThreadCanExit = False
 
     def isDomainValid(self, domain):
@@ -79,7 +81,7 @@ class DomainSpidder(threading.Thread):
             if not domain in newDomains and not domain == originalDomain and not domain == '':
                 HTTPSQSQueue.put(DOMAINQUEUE02, domain)
                 newDomains.append(domain)
-        C.Info('(%2d) get %3d new domains from %s' % (self._tid, len(newDomains), originalDomain), C.INFO)
+        C.Info('(%2d) get %3d new domains from %s' % (self._tid, len(newDomains), originalDomain), C.DEBUG)
         newDomains = []
 
     def fuck(self):
@@ -89,13 +91,33 @@ class DomainSpidder(threading.Thread):
                 time.sleep(5)
                 continue
             self.fuckDomain(originalDomain)
-            self.ThreadStartTime = time.time()
-            if self.ThreadCanExit == True:
-                break
+            self.ThreadRefreshTime = time.time()
+            self.TotalProcessed  = self.TotalProcessed + 1
+            info = '(%2d) processed %d domains in %.fs' % (self._tid, self.TotalProcessed, self.ThreadRefreshTime-self.ThreadStartTime)
+            C.Info(info, C.DEBUG)
+            if self.ThreadCanExit == True: break
 
     def run(self):
         self.fuck()
-                
+
+class Monitor(threading.Thread):
+    ThreadStartTime  = time.time()
+    TotalProcessed   = 0
+    def __init__(self):
+        threading.Thread.__init__(self)
+
+    def run(self):
+        while True:
+            self.ShowStatus()
+            time.sleep(15)
+            pass
+    def ShowStatus(self):
+        self.TotalProcessed = 0
+        for spider in DomainSpidders:
+            self.TotalProcessed = self.TotalProcessed + spider.TotalProcessed
+        TimeUsed = time.time() - self.ThreadStartTime
+        info = 'Totoal Domains:%d, Time used:%.fm, Speed:%.f/s' % (self.TotalProcessed, TimeUsed/60, float(self.TotalProcessed/TimeUsed))
+        C.Info(info, C.INFO)
 
 if __name__ == '__main__' :
     reload(sys)
@@ -108,3 +130,4 @@ if __name__ == '__main__' :
         DomainSpidders.append(DomainSpidder(i))
     for digger in DomainSpidders:
         digger.start()
+    Monitor().start()

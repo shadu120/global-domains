@@ -75,9 +75,7 @@ class DomainProcessor(threading.Thread):
             self._ssdb.setHItem('hdm', MD5(domain), domain)
             HTTPSQSQueue.put(DOMAINQUEUE01, domain)
             DomainsStored = DomainsStored    + 1
-        else:
-            if not self._ssdb.isDomainInDB('hdp', domain):
-                self._ssdb.setHItem('hdp', MD5(domain), str(int(time.time())))
+
     def monitor(self):
         if os.path.exists('debug.dump'):self.dump()
     def refreshBlacklist(self, domain):
@@ -181,11 +179,15 @@ class Monitor(threading.Thread):
         '''
         SSDB should be in separated instance, otherwise there will be drmastic problems!!!
         '''
-        C.Info('DB: %d / %d , Mem:%d / %d , Queue: %d / %d , Time:%.f' % \
-            (self._ssdb.getHSize('hdm'), self._ssdb.getHSize('hdp'), \
+        TotalDomainInDB = self._ssdb.getHSize('hdm')
+        TotalTimeUsed   = time.time() - self._StartTime
+        AverageSpeed    = float(DomainsStored / TotalTimeUsed)
+
+        C.Info('DB: %d, Mem:%d/%d, Queue:%d/%d, Time:%.fm, Speed:%.f/s' % \
+            (TotalDomainInDB, \
                 DomainsProcessed, DomainsStored, \
                 self._QueueUnRead01, self._QueueUnRead02, \
-                time.time() - self._StartTime), \
+                TotalTimeUsed/60, AverageSpeed), \
             C.INFO)
 
     def checkDomainsQueue(self):
