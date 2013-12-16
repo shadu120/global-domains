@@ -73,7 +73,8 @@ class DomainSpidder(threading.Thread):
             return htmlContent
 
     def fuckDomain(self, originalDomain):
-        newDomains = []
+        time1       = time.time()
+        newDomains  = []
         hc          = self.getHTMLContentFromUrl('http://' + originalDomain)
         urls        = self.parseUrlsFromHTMLContent(hc)
         for url in urls:
@@ -81,7 +82,7 @@ class DomainSpidder(threading.Thread):
             if not domain in newDomains and not domain == originalDomain and not domain == '':
                 HTTPSQSQueue.put(DOMAINQUEUE02, domain)
                 newDomains.append(domain)
-        C.Info('(%2d) get %3d new domains from %s' % (self._tid, len(newDomains), originalDomain), C.DEBUG)
+        C.Info('(%2d) get %3d new domains from %s in %.fs' % (self._tid, len(newDomains), originalDomain, time.time()-time1), C.DEBUG)
         newDomains = []
 
     def fuck(self):

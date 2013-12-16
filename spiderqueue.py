@@ -2,9 +2,6 @@
 import time
 from httpsqs import HTTPSQS
 
-host     = '127.0.0.1'
-port     = 1218
-password = 'xxoo'
 httpsqs  = HTTPSQS(host = '127.0.0.1', port=1218, password = 'xxoo')
 
 class HTTPSQSQueue():
