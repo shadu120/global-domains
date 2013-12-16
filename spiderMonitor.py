@@ -193,11 +193,11 @@ class Monitor(threading.Thread):
     def checkDomainsQueue(self):
         self._QueueUnRead01 = self.getQueueUnRead(DOMAINQUEUE01)
         self._QueueUnRead02 = self.getQueueUnRead(DOMAINQUEUE02)
-        if self._QueueUnRead01 > 100000:
-            C.Info('HTTPSQSQueue %s will be full, waiting for reset!!!!!!!!!!!!!' % DOMAINQUEUE01, C.ALERT)
-            for i in range(0, 100):HTTPSQSQueue.put(DOMAINQUEUE02, HTTPSQSQueue.get(DOMAINQUEUE01))
-            HTTPSQSQueue.reset(DOMAINQUEUE01)                
-        if self._QueueUnRead02 > 100000:
+        if self._QueueUnRead01 > 10000:
+            C.Info('HTTPSQSQueue %s will be full, waiting for cache!!!!!!!!!!!!!' % DOMAINQUEUE01, C.ALERT)
+            self.cacheHTTPSQSQueue(DOMAINQUEUE01)
+            C.Info('HTTPSQSQueue cached', C.ALERT)
+        if self._QueueUnRead02 > 10000:
             C.Info('HTTPSQSQueue %s will be full, waiting for reset!!!!!!!!!!!!!' % DOMAINQUEUE02, C.ALERT)
             for i in range(0, 100):HTTPSQSQueue.put(DOMAINQUEUE01, HTTPSQSQueue.get(DOMAINQUEUE02))
             HTTPSQSQueue.reset(DOMAINQUEUE02)                
@@ -211,6 +211,21 @@ class Monitor(threading.Thread):
             C.Info(str(e), C.ERROR)
         return UnRead
 
+    def cacheHTTPSQSQueue(self,qName):
+        while self.getQueueUnRead(qName) > 1000:
+            domains = []
+            for i in range(0, 100):
+                domains.append(HTTPSQSQueue.get(DOMAINQUEUE01))
+            
+            try:
+                cacheFileName = qName + '-' + time.strftime('%Y%m%d%H%M%S') + '.qc'
+                f = open(cacheFileName, 'a+')
+                try:
+                    f.write('\n'.join(domains))
+                except:
+                    f.close()
+            except:
+                pass
 
 
 if __name__ == '__main__' :
